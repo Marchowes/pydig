@@ -1,12 +1,13 @@
 import socket
 import time
 import base64
+import sys
 
 
 from pydiglib.dnsmsg import DNSquery, DNSresponse
 from pydiglib.dnsparam import qt,qc,rc
 from pydiglib.util import get_socketparams, random_init
-from pydiglib.query import mk_id, mk_request,send_request_udp
+from pydiglib.query import mk_id, mk_request,send_request_udp, do_axfr, send_request_tcp2
 from pydiglib.tsig import Tsig, read_tsig_params
 from pydiglib.tsig import ITIMEOUT, RETRIES
 
@@ -21,8 +22,8 @@ class Digger(object):
         :return:
         """
         self.validKwargs = ['type', 'port', 'ipversion','aaonly',
-                            'norecurse','adFlag','cdflag', 'dnssec'
-                            'use_edns0', 'tsigkey', 'tsiginfo']
+                            'norecurse','adFlag','cdflag', 'dnssec',
+                            'use_edns0', 'tsigkey', 'tsiginfo', 'tcp']
         self.dnsserver = dnsserver
         self.host = host
         if not self.host.endswith("."):
@@ -45,6 +46,7 @@ class Digger(object):
         self.cdFlag=self.kwargs.get('cdflag', False)
         self.use_edns0=self.kwargs.get('use_edns', False)
         self.do_0x20=self.kwargs.get('do_0x20', False)
+        self.tcp=self.kwargs.get('tcp', False)
         self.dnssec=self.kwargs.get('dnssec', False)
         if self.dnssec:
             self.use_edns0 = True
@@ -73,6 +75,7 @@ class Digger(object):
         random_init()
         self._txid = mk_id()
         self._tc = 0
+        self._tcp = self.tcp
         self._requestpkt = mk_request(self._query, self._txid, self.options)
         self._size_query = len(self._requestpkt)
 
@@ -123,21 +126,42 @@ class Digger(object):
                         'do_0x20': self.do_0x20}
 
     def dig(self):
-        t1 = time.time()
-        (responsepkt, responder_addr) = \
+        def udp():
+            t1 = time.time()
+            (responsepkt, responder_addr) = \
                       send_request_udp(self._requestpkt, self._server_addr, self._port, self._family,
                                        ITIMEOUT, RETRIES)
-        t2 = time.time()
-        size_response = len(responsepkt)
-        if not responsepkt:
-            raise Exception("No response from server")
-        self.response = DNSresponse(self._family, self._query, self._requestpkt, responsepkt, self._txid)
-        if not self.response.tc:
-            print ";; UDP response from %s, %d bytes, in %.3f sec" % \
-                  (responder_addr, size_response, (t2-t1))
-            if self._server_addr != "0.0.0.0" and responder_addr[0] != self._server_addr:
-                print "WARNING: Response from unexpected address %s" % \
-                      responder_addr[0]
+            t2 = time.time()
+            size_response = len(responsepkt)
+            if not responsepkt:
+                raise Exception("No response from server")
+            self.response = DNSresponse(self._family, self._query, self._requestpkt, responsepkt, self._txid)
+            if not self.response.tc:
+                print ";; UDP response from %s, %d bytes, in %.3f sec" % \
+                      (responder_addr, size_response, (t2-t1))
+                if self._server_addr != "0.0.0.0" and responder_addr[0] != self._server_addr:
+                    print "WARNING: Response from unexpected address %s" % \
+                          responder_addr[0]
+            if (self.response and self.response.tc):
+                tcp()
+
+        def tcp():
+            t1 = time.time()
+            responsepkt = send_request_tcp2(self._requestpkt, self._server_addr, self._port, self._family)
+            t2 = time.time()
+            size_response = len(responsepkt)
+            print ";; TCP response from %s, %d bytes, in %.3f sec" % \
+                  ( (self._server_addr, self._port), size_response, (t2-t1))
+            self.response = DNSresponse(self._family, self._query, self._requestpkt, responsepkt, self._txid)
+
+        if self.type == "AXFR":
+            responses = do_axfr(self._query, self._requestpkt, self._server_addr, self._port, self._family)
+            sys.exit(0)
+        if self._tcp:
+            tcp()
+        else:
+            udp()
+
 
         self.response.print_preamble(self.options)
         self.response.decode_sections()
