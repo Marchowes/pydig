@@ -182,12 +182,30 @@ class Digger(object):
     def addRecord(self, *args, **kwargs):
         if kwargs['rrtype'] == 'A':
             self.records.append(A(**kwargs))
-        if kwargs['rrtype'] == 'AAAA':
+        elif kwargs['rrtype'] == 'AAAA':
             self.records.append(AAAA(**kwargs))
-        if kwargs['rrtype'] == 'NS':
+        elif kwargs['rrtype'] == 'NS':
             self.records.append(NS(**kwargs))
-        if kwargs['rrtype'] == 'SOA':
+        elif kwargs['rrtype'] == 'SOA':
             self.records.append(SOA(**kwargs))
+        elif kwargs['rrtype'] == 'DHCID':
+            self.records.append(DHCID(**kwargs))
+        elif kwargs['rrtype'] == 'MX':
+            self.records.append(MX(**kwargs))
+        elif kwargs['rrtype'] == 'KEY':
+            self.records.append(KEY(**kwargs))
+        elif kwargs['rrtype'] == 'LOC':
+            self.records.append(LOC(**kwargs))
+        elif kwargs['rrtype'] == 'PTR':
+            self.records.append(PTR(**kwargs))
+        elif kwargs['rrtype'] == 'RP':
+            self.records.append(RP(**kwargs))
+
+
+
+        else:
+            self.records.append(Unknown(**kwargs))
+
 
 
 

@@ -5,7 +5,7 @@ from .options import options
 from .common import *
 from .dnsparam import *
 from .util import *
-from .lib.recordObjects import determineRecord, DigObject
+from .lib.recordObjects import determineRecord
 
 
 class DNSquery:
