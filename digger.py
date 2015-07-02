@@ -163,12 +163,12 @@ class Digger(object):
         else:
             udp()
 
-        digObj = DigObject()
+        self.digObj = DigObject()
 
 
         self.response.print_preamble(self.options)
 
-        self.response.decode_sections(object=digObj)
+        self.response.decode_sections(object=self.digObj)
         #self.response.decode_sections()
 
 

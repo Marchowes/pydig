@@ -194,7 +194,8 @@ class DNSresponse:
                         if not object:
                             self.print_rr(rrname, ttl, rrtype, rrclass, rdata)
                         else:
-                            determineRecord(**recordArgs)
+                            object.addRecord(**determineRecord(**recordArgs))
+                            #determineRecord(**recordArgs)
 
 
 
