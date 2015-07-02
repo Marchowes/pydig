@@ -5,6 +5,7 @@ from .options import options
 from .common import *
 from .dnsparam import *
 from .util import *
+from .lib.recordObjects import determineRecord, DigObject
 
 
 class DNSquery:
@@ -146,9 +147,10 @@ class DNSresponse:
                 print "*** WARNING: Answer didn't match question!\n"
         return
 
-    def decode_sections(self, is_axfr=False):
+    def decode_sections(self, is_axfr=False, object=None):
         offset = 12                     # skip over DNS header
         answer_qname = None
+        #digObj = DigObject()
 
         for (secname, rrcount) in zip(self.sections, 
                      [self.qdcount, self.ancount, self.nscount, self.arcount]):
@@ -161,20 +163,42 @@ class DNSresponse:
                     answer_qname = pdomainname(rrname)
                     if (not is_axfr):
                         continue
-                    print "%s\t%s\t%s" % (answer_qname,
-                                          qc.get_name(rrclass), 
-                                          qt.get_name(rrtype))
-                    self.question_matched(answer_qname, rrtype, rrclass)
+                    if not object:
+                        print "%s\t%s\t%s" % (answer_qname,
+                                              qc.get_name(rrclass),
+                                              qt.get_name(rrtype))
+                        self.question_matched(answer_qname, rrtype, rrclass)
+                    else:
+                        pass
+                        #CALL OBJECT FACTORY
             else:
                 for i in range(rrcount):
                     rrname, rrtype, rrclass, ttl, rdata, offset = \
                             decode_rr(self.pkt, offset, options["hexrdata"])
+                    recordArgs ={'rrname': rrname,
+                                'rrtype': rrtype,
+                                'rrclass': rrclass,
+                                'ttl': ttl,
+                                'rdata': rdata,
+                                'secname': secname}
+
                     if (is_axfr and (secname != "ANSWER")):
                         continue
                     elif rrtype == 41:
-                        print_optrr(rrclass, ttl, rdata)
+                        if not object:
+                            print_optrr(rrclass, ttl, rdata)
+                        else:
+                            pass
+                            #CALL OBJECT FACTORY.
                     else:
-                        self.print_rr(rrname, ttl, rrtype, rrclass, rdata)
+                        if not object:
+                            self.print_rr(rrname, ttl, rrtype, rrclass, rdata)
+                        else:
+                            determineRecord(**recordArgs)
+
+
+
+
 
     def __repr__(self):
         return "<DNSresponse>"

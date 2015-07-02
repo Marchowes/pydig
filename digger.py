@@ -5,11 +5,12 @@ import sys
 
 
 from pydiglib.dnsmsg import DNSquery, DNSresponse
-from pydiglib.dnsparam import qt,qc,rc
+from pydiglib.dnsparam import qt,qc
 from pydiglib.util import get_socketparams, random_init
 from pydiglib.query import mk_id, mk_request,send_request_udp, do_axfr, send_request_tcp2
 from pydiglib.tsig import Tsig, read_tsig_params
 from pydiglib.tsig import ITIMEOUT, RETRIES
+from pydiglib.lib.recordObjects import DigObject
 
 
 class Digger(object):
@@ -162,10 +163,13 @@ class Digger(object):
         else:
             udp()
 
+        digObj = DigObject()
+
 
         self.response.print_preamble(self.options)
-        self.response.decode_sections()
 
+        self.response.decode_sections(object=digObj)
+        #self.response.decode_sections()
 
 
 

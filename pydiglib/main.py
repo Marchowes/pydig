@@ -16,6 +16,8 @@ def main(args):
     sys.excepthook = excepthook
     tsig = Tsig()                          # instantiate Tsig object
 
+    TEMP = options
+
     try:
         qname, qtype, qclass = parse_args(args[1:])
         qtype_val = qt.get_val(qtype)
