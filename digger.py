@@ -10,7 +10,7 @@ from pydiglib.util import get_socketparams, random_init
 from pydiglib.query import mk_id, mk_request,send_request_udp, do_axfr, send_request_tcp2
 from pydiglib.tsig import Tsig, read_tsig_params
 from pydiglib.tsig import ITIMEOUT, RETRIES
-from pydiglib.lib.recordObjects import DigObject
+from pydiglib.lib.recordObjects import *
 
 
 class Digger(object):
@@ -22,6 +22,8 @@ class Digger(object):
         :param kwargs:
         :return:
         """
+        self.records = []
+
         self.validKwargs = ['type', 'port', 'ipversion','aaonly',
                             'norecurse','adFlag','cdflag', 'dnssec',
                             'use_edns0', 'tsigkey', 'tsiginfo', 'tcp']
@@ -163,17 +165,29 @@ class Digger(object):
         else:
             udp()
 
-        self.digObj = DigObject()
+        #self.digObj = DigObject()
 
 
         self.response.print_preamble(self.options)
 
-        self.response.decode_sections(object=self.digObj)
+        self.response.decode_sections(object=self)
         #self.response.decode_sections()
 
 
 
 
+
+
+
+    def addRecord(self, *args, **kwargs):
+        if kwargs['rrtype'] == 'A':
+            self.records.append(A(**kwargs))
+        if kwargs['rrtype'] == 'AAAA':
+            self.records.append(AAAA(**kwargs))
+        if kwargs['rrtype'] == 'NS':
+            self.records.append(NS(**kwargs))
+        if kwargs['rrtype'] == 'SOA':
+            self.records.append(SOA(**kwargs))
 
 
 
